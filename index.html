@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Momos — Pricing Defense Decision Tree</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #faf6f1;
+    --bg-warm: #f5efe8;
+    --bg-white: #ffffff;
+    --card: #ffffff;
+    --border: #e8e0d6;
+    --border-light: #f0ead3;
+    --red: #e04a3c;
+    --red-light: #fdf0ee;
+    --red-border: #f5ccc7;
+    --green: #1a8a5c;
+    --green-light: #edf8f2;
+    --green-border: #c4e8d6;
+    --amber: #c47b17;
+    --amber-light: #fef8ec;
+    --amber-border: #f5deb0;
+    --blue: #2d6fba;
+    --blue-light: #eef4fb;
+    --blue-border: #bdd4f0;
+    --purple: #7c3aed;
+    --purple-light: #f5f0ff;
+    --purple-border: #d4c1f7;
+    --text: #1a1a1a;
+    --text-secondary: #5c5650;
+    --text-dim: #9a918a;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
+    --shadow: 0 2px 8px rgba(0,0,0,.05), 0 1px 3px rgba(0,0,0,.04);
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+  .header {
+    background: var(--bg-white);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px 0;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-top { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+  .logo {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: var(--red);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; line-height: 1;
+    box-shadow: 0 2px 8px rgba(224,74,60,.2);
+  }
+  .header-meta { font-family: var(--mono); font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .14em; }
+  h1 { font-size: 22px; font-weight: 800; letter-spacing: -.02em; color: var(--text); line-height: 1.2; }
+  .header-sub { color: var(--text-secondary); font-size: 13px; margin: 4px 0 14px; font-weight: 400; }
+
+  .tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    border: none; background: transparent; padding: 10px 14px;
+    cursor: pointer;
+    color: var(--text-dim); font-family: var(--sans); font-size: 13px; font-weight: 600;
+    transition: all .15s; white-space: nowrap;
+    border-bottom: 2px solid transparent;
+  }
+  .tab:hover { color: var(--text-secondary); }
+  .tab.active { color: var(--red); border-bottom-color: var(--red); }
+
+  .content { max-width: 920px; margin: 24px auto; padding: 0 28px 60px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .principle {
+    border-radius: var(--radius); padding: 18px 20px; margin-bottom: 20px;
+    border: 1px solid;
+  }
+  .principle .p-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .principle p { color: var(--text-secondary); font-size: 13px; line-height: 1.7; }
+  .principle em { color: var(--text); font-style: normal; font-weight: 600; }
+
+  .section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; box-shadow: var(--shadow-sm); }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; cursor: pointer; transition: background .15s;
+  }
+  .section-header:hover { background: var(--bg-warm); }
+  .section-header.open { border-bottom: 1px solid var(--border); }
+  .section-title { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; color: var(--text); }
+  .section-icon { font-size: 15px; width: 26px; height: 26px; border-radius: 6px; background: var(--bg-warm); display: inline-flex; align-items: center; justify-content: center; }
+  .chevron { font-size: 14px; transition: transform .2s; color: var(--text-dim); }
+  .chevron.open { transform: rotate(180deg); }
+  .section-body { padding: 18px; display: none; }
+  .section-body.open { display: block; }
+
+  .d-question {
+    background: var(--amber-light); border: 1px solid var(--amber-border);
+    border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px;
+  }
+  .d-question p { color: var(--amber); font-weight: 600; font-size: 13px; }
+  .d-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .d-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .d-branch { border-radius: var(--radius-sm); padding: 12px; }
+  .d-branch .b-label { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+  .d-branch p { font-size: 13px; line-height: 1.55; color: var(--text); }
+  .yes { background: var(--green-light); border: 1px solid var(--green-border); }
+  .yes .b-label { color: var(--green); }
+  .no { background: var(--red-light); border: 1px solid var(--red-border); }
+  .no .b-label { color: var(--red); }
+  .no-y { background: var(--amber-light); border: 1px solid var(--amber-border); }
+  .no-y .b-label { color: var(--amber); }
+  .no-p { background: var(--purple-light); border: 1px solid var(--purple-border); }
+  .no-p .b-label { color: var(--purple); }
+  .no-b { background: var(--blue-light); border: 1px solid var(--blue-border); }
+  .no-b .b-label { color: var(--blue); }
+
+  .script { background: var(--blue-light); border: 1px solid var(--blue-border); border-radius: var(--radius-sm); padding: 12px 14px; margin: 10px 0; }
+  .script-label { font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+  .script p { color: var(--text-secondary); font-size: 13px; line-height: 1.7; font-style: italic; }
+
+  .tactic { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin: 10px 0; }
+  .tactic .t-title { color: var(--red); font-weight: 700; font-size: 13px; margin-bottom: 5px; }
+  .tactic p { color: var(--text-secondary); font-size: 13px; line-height: 1.6; }
+
+  .cards-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
+  .cards-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0; }
+  .cards-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+  .stat-card { border-radius: var(--radius); padding: 16px; border: 1px solid; }
+  .stat-card .sc-val { font-family: var(--mono); font-weight: 700; font-size: 22px; margin-bottom: 4px; }
+  .stat-card .sc-label { font-size: 13px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+  .stat-card .sc-note { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+  .badge { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 10px; font-weight: 700; font-family: var(--mono); text-transform: uppercase; letter-spacing: .04em; }
+
+  .esc-row { display: grid; grid-template-columns: 100px 1fr; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .esc-row:last-child { border-bottom: none; }
+  .esc-badge { border-radius: var(--radius-sm); padding: 5px 10px; font-family: var(--mono); font-size: 10px; font-weight: 800; text-align: center; letter-spacing: .02em; }
+  .esc-info .esc-trigger { font-size: 13px; font-weight: 600; color: var(--text); }
+  .esc-info .esc-who { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .must-have {
+    background: var(--red-light); border: 1px solid var(--red-border);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 18px;
+  }
+  .must-have .mh-title { color: var(--red); font-weight: 800; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .must-have .mh-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--red-border); }
+  .must-have .mh-row:last-child { border-bottom: none; }
+  .must-have .mh-row .mh-icon { color: var(--red); font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+  .must-have .mh-row p { color: var(--text); font-size: 13px; line-height: 1.55; }
+  .must-have .mh-row strong { color: var(--red); }
+
+  .waterfall { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin: 14px 0; }
+  .wf-step { background: var(--blue-light); border: 1px solid var(--blue-border); border-radius: var(--radius-sm); padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--blue); }
+  .wf-arrow { color: var(--text-dim); font-size: 13px; }
+
+  .tier-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  .tier-table th { background: var(--bg-warm); padding: 10px 14px; text-align: left; font-size: 10px; font-family: var(--mono); text-transform: uppercase; color: var(--text-dim); letter-spacing: .06em; }
+  .tier-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .tier-table tr:last-child td { border-bottom: none; }
+  .tier-table tr.standard { background: var(--green-light); }
+  .tier-table tr.standard td:first-child { border-left: 3px solid var(--green); }
+  .tier-table tr.recommended { background: var(--purple-light); }
+  .tier-table tr.recommended td:first-child { border-left: 3px solid var(--purple); }
+
+  .never-list .n-item { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .never-list .n-item:last-child { border-bottom: none; }
+  .never-list .n-icon { color: var(--red); font-weight: 800; font-size: 14px; flex-shrink: 0; }
+  .never-list .n-text { color: var(--text-secondary); font-size: 13px; line-height: 1.55; }
+
+  .code-block { background: var(--bg-warm); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; font-family: var(--mono); font-size: 12px; color: var(--text-secondary); line-height: 1.8; margin: 12px 0; }
+  .code-block span { color: var(--text); font-weight: 600; }
+
+  .trade-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .trade-item { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; }
+  .trade-item .ti-label { color: var(--text); font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .trade-item .ti-earn { color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+
+  .sub-heading { font-family: var(--mono); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin: 18px 0 10px; }
+  .body-text { color: var(--text-secondary); font-size: 13px; line-height: 1.7; margin-bottom: 12px; }
+
+  .quarterly-box { background: var(--amber-light); border: 1px solid var(--amber-border); border-radius: var(--radius); padding: 16px; margin: 14px 0; }
+  .qb-title { color: var(--amber); font-weight: 800; font-size: 12px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  .qb-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .qb-stat { background: var(--card); border-radius: var(--radius-sm); padding: 10px; text-align: center; border: 1px solid var(--amber-border); }
+  .qb-stat .qs-label { font-size: 10px; font-family: var(--mono); color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+  .qb-stat .qs-val { color: var(--amber); font-weight: 800; font-size: 15px; }
+  .qb-note { color: var(--text-secondary); font-size: 12px; line-height: 1.55; }
+
+  /* STEP FLOW */
+  .step-flow { display: flex; gap: 6px; margin: 14px 0; flex-wrap: wrap; }
+  .step-flow .sf-step { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; flex: 1; min-width: 140px; }
+  .step-flow .sf-step.active { border-color: var(--green-border); background: var(--green-light); }
+  .step-flow .sf-step.fallback { border-color: var(--amber-border); background: var(--amber-light); }
+  .step-flow .sf-step.escalate { border-color: var(--red-border); background: var(--red-light); }
+  .step-flow .sf-num { font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+  .step-flow .sf-text { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.4; }
+  .step-flow .sf-note { font-size: 11px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4; }
+  .sf-arrow { display: flex; align-items: center; color: var(--text-dim); font-size: 16px; }
+
+  @media (max-width: 700px) {
+    .cards-3, .cards-4, .d-grid, .d-grid-3, .qb-stats { grid-template-columns: 1fr; }
+    .cards-2, .trade-grid { grid-template-columns: 1fr; }
+    .header { padding: 16px 16px 0; }
+    .content { padding: 0 16px 60px; }
+    h1 { font-size: 19px; }
+    .esc-row { grid-template-columns: 80px 1fr; }
+    .step-flow { flex-direction: column; }
+    .sf-arrow { transform: rotate(90deg); justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">🍜</div>
+    <div>
+      <div class="header-meta">Momos · Sales Playbook · Internal Only</div>
+      <h1>Pricing Defense Decision Tree</h1>
+    </div>
+  </div>
+  <p class="header-sub">Hold price. Defend fees. Close without unnecessary concessions.</p>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('global')">Global Rules</button>
+    <button class="tab" onclick="switchTab('payment')">Payment Terms</button>
+    <button class="tab" onclick="switchTab('fees')">Platform & Impl Fees</button>
+    <button class="tab" onclick="switchTab('discount')">Discount Defense</button>
+    <button class="tab" onclick="switchTab('contract')">Contract Length</button>
+    <button class="tab" onclick="switchTab('plan')">Plan Upsell</button>
+    <button class="tab" onclick="switchTab('approval')">Approval Flow</button>
+    <button class="tab" onclick="switchTab('tactics')">Closing Plays</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- ============================================================ -->
+  <!-- GLOBAL RULES (NEW TAB) -->
+  <!-- ============================================================ -->
+  <div class="panel active" id="panel-global">
+    <div class="must-have">
+      <div class="mh-title">Rules That Apply to Every Deal</div>
+      <div class="mh-row"><span class="mh-icon">⚠</span><p><strong>Annual contracts only.</strong> We do not offer monthly or quarterly billing. Any non-annual payment structure requires special approval from Sai.</p></div>
+      <div class="mh-row"><span class="mh-icon">⚠</span><p><strong>7% annual price increase is standard.</strong> Every renewal above Standard tier includes a 7% annual increase. A customer can negotiate this down to the 3–5% range (inflation-adjusted), but <strong>never to 0%.</strong> If they want to hold pricing, the answer is a multi-year contract — the price locks for the full term.</p></div>
+      <div class="mh-row"><span class="mh-icon">⚠</span><p><strong>Moving away from free trials.</strong> Instead of free trials, we offer structured onboarding with built-in risk protection. For Mid-Market: 30-day money-back guarantee (they pay upfront, full refund if they cancel within 30 days). For Enterprise: see the onboarding path below.</p></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">🏢</span> Enterprise Onboarding Path</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <p class="body-text">Enterprise customers don't get free trials — they get structured onboarding paths. Always start with Option 1 and only move down if there's genuine pushback. Each step requires more from us and less from them, so treat downward movement as a concession you're giving.</p>
+
+        <div class="step-flow">
+          <div class="sf-step active">
+            <div class="sf-num" style="color:var(--green)">Option 1 — Default</div>
+            <div class="sf-text">Implementation Fee + Billing Starts</div>
+            <div class="sf-note">Full commitment. They pay the implementation fee and subscription billing begins immediately. This is the standard.</div>
+          </div>
+          <div class="sf-arrow">→</div>
+          <div class="sf-step fallback">
+            <div class="sf-num" style="color:var(--amber)">Option 2 — Pushback</div>
+            <div class="sf-text">Implementation Fee + 30-Day Opt-Out</div>
+            <div class="sf-note">They pay the implementation fee and billing starts, but they can opt out within 30 days for a refund on subscription (not implementation).</div>
+          </div>
+          <div class="sf-arrow">→</div>
+          <div class="sf-step escalate">
+            <div class="sf-num" style="color:var(--red)">Option 3 — Sai Approval</div>
+            <div class="sf-text">Implementation Fee + Unpaid Pilot</div>
+            <div class="sf-note">They pay the implementation fee but get an unpaid pilot period before subscription billing begins. Requires Sai approval. They still pay for implementation.</div>
+          </div>
+        </div>
+
+        <div class="script"><div class="script-label">Script — Presenting Option 1</div><p>"Our standard onboarding is straightforward — you pay the implementation fee to get everything set up, and billing starts on the same timeline. This is how we get you to value fastest, and it's how 90%+ of our enterprise customers start."</p></div>
+        <div class="script"><div class="script-label">Script — Falling Back to Option 2</div><p>"I understand the hesitation. Here's what I can do — we'll start billing as normal, but I'll build in a 30-day opt-out window. If within the first 30 days you decide this isn't the right fit, we'll refund the subscription. The implementation fee stays because the work is already done at that point. That way you're protected, but we can still get you live immediately."</p></div>
+        <div class="script"><div class="script-label">Script — Escalating to Option 3</div><p>"Let me take this to our CEO — for accounts like yours, he has the ability to structure a pilot where we cover the subscription cost for a defined period while you evaluate. You'd still pay the implementation fee since that covers real engineering time, but the subscription risk is on us. I'll need 24 hours to get this approved. Fair?"</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">🏪</span> Mid-Market Onboarding Path</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <div class="cards-2">
+          <div class="stat-card" style="background:var(--green-light);border-color:var(--green-border)">
+            <div class="sc-label" style="color:var(--green)">Standard: Pay + 30-Day Guarantee</div>
+            <div class="sc-note">Customer pays upfront (implementation + subscription). If they don't like the product within 30 days, they get a full refund. No free trial, no unpaid pilot. They have to be billed at start.</div>
+          </div>
+          <div class="stat-card" style="background:var(--red-light);border-color:var(--red-border)">
+            <div class="sc-label" style="color:var(--red)">No Free Trials</div>
+            <div class="sc-note">Do not offer free trials under any circumstances. The 30-day money-back guarantee achieves the same risk reduction for the customer while keeping us committed and them invested.</div>
+          </div>
+        </div>
+        <div class="script"><div class="script-label">Script — Money-Back Guarantee</div><p>"We don't do free trials — and here's why. A free trial means nobody's invested, and you don't get the real experience. Instead, we give you a 30-day money-back guarantee. You pay upfront, we go all-in on implementation and onboarding, and if within 30 days you feel this isn't the right fit, you get a full refund. That way you're seeing what the platform actually does for your business, not a sandbox version of it."</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">📈</span> 7% Annual Price Increase — Rules & Defense</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <div class="cards-3">
+          <div class="stat-card" style="background:var(--red-light);border-color:var(--red-border)">
+            <div class="sc-val" style="color:var(--red)">7%</div>
+            <div class="sc-label">Standard Annual Increase</div>
+            <div class="sc-note">Default for all renewals. This reflects platform improvements, expanded features, and market inflation.</div>
+          </div>
+          <div class="stat-card" style="background:var(--amber-light);border-color:var(--amber-border)">
+            <div class="sc-val" style="color:var(--amber)">3–5%</div>
+            <div class="sc-label">Negotiable Floor</div>
+            <div class="sc-note">If the customer pushes hard, you can negotiate to an inflation-adjusted 3–5%. Below this requires Sai approval.</div>
+          </div>
+          <div class="stat-card" style="background:var(--green-light);border-color:var(--green-border)">
+            <div class="sc-val" style="color:var(--green)">0%</div>
+            <div class="sc-label">Multi-Year Lock</div>
+            <div class="sc-note">The only way to avoid annual increases is a multi-year contract. Price locks for the full term. This is how you redirect the conversation.</div>
+          </div>
+        </div>
+        <div class="tactic"><div class="t-title">Never Agree to 0% on a 1-Year Deal</div><p>There is no scenario where a 1-year renewal has a 0% increase. If a customer says "we won't accept any increase," the answer is always: "Then let's lock your pricing in with a multi-year contract." This is a feature, not a concession — they get price certainty, we get commitment.</p></div>
+        <div class="script"><div class="script-label">Script — Defending the 7% Increase</div><p>"Our standard annual adjustment is 7%, which reflects the ongoing investment we're making in the platform — new AI capabilities, expanded integrations, and enhanced support. Most operators see this as well below the value of what's being added each year. That said, if you want to lock in your current rate with no increases, the best path is a multi-year contract. Want me to run both scenarios?"</p></div>
+        <div class="script"><div class="script-label">Script — Negotiating Down to 3–5%</div><p>"I can work with you on the specific number — we have some flexibility in the 3–5% range, which is essentially pegged to inflation. What I can't do is zero. If zero is truly what you need, the multi-year path is the only way I can make that happen. Which direction makes more sense for your team?"</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">⚡</span> Creating Urgency — Getting Them to Sign Quickly</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <p class="body-text">Never manufacture fake urgency. Build real qualitative pressure through scarcity, timing, and framing.</p>
+        <div class="cards-2">
+          <div class="tactic"><div class="t-title">Onboarding Cohort Scarcity</div><p>"We run onboarding in cohorts and the next one starts [date]. If we miss that window, the next one is [later date], which pushes your go-live by [X weeks]. I want to make sure you're in the earlier group."</p></div>
+          <div class="tactic"><div class="t-title">Pricing Window</div><p>"This pricing is based on our current rate card. We review pricing quarterly and I can't guarantee these numbers will hold past [date]. I'd rather lock you in now while I can."</p></div>
+          <div class="tactic"><div class="t-title">CSM Availability</div><p>"Right now I can get you paired with [CSM name], who has deep experience with [their segment]. Their capacity fills up fast — if we wait another few weeks, I may need to assign someone else."</p></div>
+          <div class="tactic"><div class="t-title">Competitive Timing</div><p>"I know you're also looking at [competitor]. The teams that get the most value from Momos are the ones who start before their busy season so the platform is dialed in when it matters most. If you're targeting [season], we should start now."</p></div>
+        </div>
+        <div class="tactic"><div class="t-title">The 24-Hour Sai Rule (AE Alignment)</div><p>For any deal requiring special approval: "I need to take this to Sai within 24 hours — he's our CEO and he reviews these personally. Honestly, you and I are on the same page here. Let me go to bat for you, but I need your commitment that if he approves this, we're signing. Can you give me that?"  This positions Sai as the gatekeeper and aligns the AE with the customer — you're fighting for them, not against them.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- PAYMENT TERMS -->
+  <!-- ============================================================ -->
+  <div class="panel" id="panel-payment">
+    <div class="principle" style="background:var(--red-light);border-color:var(--red-border)">
+      <div class="p-title" style="color:var(--red)">Core Principle — Annual Contracts Only</div>
+      <p>We do annual contracts. Period. Annual upfront isn't a preference — it's the product. The discounts embedded in our model assume annual cash collection and commitment. Anything else requires special approval from Sai. Your job is to make annual feel like the obvious, smart choice — never a concession.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">①</span> Set the Frame Before Objections Arise</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <p class="body-text">The best objection is the one that never happens. Frame annual as the default <em style="color:var(--text);font-style:normal;font-weight:600">early</em> — never introduce it as an ask at the end of the deal.</p>
+        <div class="script"><div class="script-label">Script — Frame on First Call</div><p>"Just so you know how we work — all our contracts are annual. That's actually how we're able to offer the pricing we do. We'll get you the numbers based on that structure."</p></div>
+        <div class="script"><div class="script-label">Script — Reinforce During Proposal</div><p>"This quote reflects annual billing, which is our standard. It lets us fully commit the resources your account needs from Day 1."</p></div>
+        <div class="tactic"><div class="t-title">Anchoring Psychology</div><p>Present annual as the baseline, not the premium. Customers negotiate from the anchor you set. Never introduce monthly or quarterly as options — if you do, you've already created a "cheaper" alternative in their mind.</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">②</span> Decision Tree — When They Push Back</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <div class="d-question"><p>Customer says: "We prefer to pay monthly / quarterly" — Why?</p></div>
+        <div class="d-grid">
+          <div class="d-branch no-y"><div class="b-label">Cash Flow / Budget Cycle</div><p>Bridge with the investment framing. Show how annual simplifies their budget as a single line item and eliminates monthly tracking overhead. Explore capex vs. opex framing with their finance team.</p></div>
+          <div class="d-branch no-p"><div class="b-label">Trust / Risk</div><p>They're worried about committing to something they haven't tried. Use the 30-day money-back guarantee (Mid-Market) or the Enterprise onboarding path. Do NOT shorten location count — keep scope intact, shorten to 1-year term if needed.</p></div>
+        </div>
+
+        <div class="script"><div class="script-label">Script — Qualitative Pushback on Monthly/Quarterly</div><p>"I totally understand the instinct, but here's the thing — we've structured everything around annual because it lets us go all-in on your success from day one. Our onboarding, CSM assignment, integration work — it's all built around having a committed annual partnership. When customers are on monthly, they tend to get a lighter-touch experience because we can't justify the same resource investment. Annual is how you get the full Momos experience."</p></div>
+
+        <div class="script"><div class="script-label">Script — Cash Flow Objection</div><p>"I hear you — let me reframe this. At [ACV], you're consolidating what used to be 3-4 separate tools into one line item. Most of our operators find it easier to get finance approval when it's positioned as a single annual platform investment rather than a recurring monthly charge. Would it help if I put together a quick one-pager your finance team can use for budget approval?"</p></div>
+
+        <div class="script"><div class="script-label">Script — Trust/Risk Objection</div><p>"That makes total sense — you want to know it works before you're locked in. Here's what we do: you sign an annual contract and billing starts, but we offer a 30-day money-back guarantee. If within the first 30 days you feel this isn't the right fit, full refund. That way you get the real experience — full onboarding, full CSM support, full platform — and you're still protected."</p></div>
+
+        <div class="sub-heading" style="color:var(--purple);margin-top:20px">Renewal Customer: Billing Migration + Price Increase</div>
+        <div class="cards-3">
+          <div class="stat-card" style="background:var(--green-light);border-color:var(--green-border)">
+            <div class="sc-val" style="color:var(--green)">No increase</div>
+            <div class="sc-label">Monthly → Annual (First Switch)</div>
+            <div class="sc-note">First time switching to annual = no price increase. Subsequent renewals after the switch follow the standard 7% annual adjustment.</div>
+          </div>
+          <div class="stat-card" style="background:var(--green-light);border-color:var(--green-border)">
+            <div class="sc-val" style="color:var(--green)">No increase</div>
+            <div class="sc-label">Quarterly → Annual (First Switch)</div>
+            <div class="sc-note">Same as monthly — first switch to annual means no increase. After that, standard annual pricing increases apply at each renewal.</div>
+          </div>
+          <div class="stat-card" style="background:var(--amber-light);border-color:var(--amber-border)">
+            <div class="sc-val" style="color:var(--amber)">+7%</div>
+            <div class="sc-label">Annual → Annual</div>
+            <div class="sc-note">Standard 7% increase. Negotiable to 3–5%, never 0%. To lock pricing: sign a multi-year contract.</div>
+          </div>
+        </div>
+        <div class="script"><div class="script-label">Script — Renewal with Price Increase</div><p>"Your renewal includes our standard annual adjustment of 7%, which reflects all the platform improvements over the past year. I know that's a factor — so here's what I'd suggest: if you want to lock in your current pricing with no increases, we can do a 2- or 3-year renewal. That way your rate is protected for the full term. Want me to model both options?"</p></div>
+        <div class="script"><div class="script-label">Script — Billing Migration</div><p>"Great news — because you're moving from monthly to annual, there's no price increase applied. Your rate stays the same, you just pay once a year instead of tracking monthly charges. Most of our customers find this a lot easier to manage. Want me to update the quote?"</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">③</span> Nuclear Option — They Still Refuse Annual</div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="cards-2">
+          <div class="stat-card" style="background:var(--red-light);border-color:var(--red-border)">
+            <div class="sc-label" style="color:var(--red)">Your Move</div>
+            <div class="sc-note">Escalate to Sai for special approval. You have a <strong>24-hour deadline</strong> to bring it to him. Do NOT calculate alternative pricing yourself. Do NOT share any premium % with the customer — Sai determines terms directly.</div>
+          </div>
+          <div class="stat-card" style="background:var(--amber-light);border-color:var(--amber-border)">
+            <div class="sc-label" style="color:var(--amber)">How to Position It</div>
+            <div class="sc-note">Align yourself with the customer. You're on their side, taking it to the CEO to fight for them. This positions Sai as the approver/gatekeeper and keeps you as the trusted advisor.</div>
+          </div>
+        </div>
+
+        <div class="quarterly-box" style="margin-top:16px">
+          <div class="qb-title">Quarterly Fallback — Last Resort (Sai Approval Required)</div>
+          <div class="qb-stats">
+            <div class="qb-stat"><div class="qs-label">Payment Cadence</div><div class="qs-val">Quarterly</div></div>
+            <div class="qb-stat"><div class="qs-label">Pricing Premium</div><div class="qs-val">+15–20%</div></div>
+            <div class="qb-stat"><div class="qs-label">Signing Deadline</div><div class="qs-val">48 hours</div></div>
+          </div>
+          <p class="qb-note">If the customer absolutely will not do annual, the only alternative is quarterly billing with a 15–20% pricing premium. <strong style="color:var(--red)">Internal only — do NOT share the premium percentage with the customer.</strong> Let Sai deliver the number directly after you escalate. The 48-hour signing window is non-negotiable: this exception pricing expires. Make it feel earned and exceptional, not automatic. If they won't commit within 48 hours, the offer reverts to annual-only.</p>
+        </div>
+
+        <div class="script"><div class="script-label">Script — Introducing the Quarterly Possibility</div><p>"I hear you — annual isn't going to work for your team right now. Here's what I can do: I'll take this to our CEO and see if he'll approve a quarterly billing structure. I should be transparent — it will come with a pricing premium, because it fundamentally changes our economics. But if he approves it, we'd need to move fast — these exceptions have a 48-hour window. Let me go to him today. If he comes back with something that works, are you ready to sign?"</p></div>
+
+        <div class="script"><div class="script-label">Script — Escalating to Sai</div><p>"I want to get you the best possible path here, so I'm going to loop in our CEO directly. He's involved in any non-standard billing structures, and honestly, that's more likely to get you a yes than anything I could offer on my own. I need to bring this to him within 24 hours — but I need to know: if he approves something that works for you, are we signing? Give me that commitment and I'll go to bat for you."</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- PLATFORM & IMPL FEES -->
+  <!-- ============================================================ -->
+  <div class="panel" id="panel-fees">
+    <div class="must-have">
+      <div class="mh-title">These Are Standard — Not Optional</div>
+      <div class="mh-row"><span class="mh-icon">⚠</span><p>Platform fees and implementation fees are <strong>part of the deal structure</strong>, not add-ons the AE can waive. Every customer pays them. Removing or reducing them requires CEO approval.</p></div>
+      <div class="mh-row"><span class="mh-icon">⚠</span><p><strong>Anchor on one, not both.</strong> Customers rarely negotiate both the per-location-per-month price and the implementation fee hard. Figure out which one the customer cares about more and anchor your defense there. Give ground on the other only if truly needed.</p></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">⚙</span> Implementation Fee — Rules & Defense</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <div class="cards-3" style="margin-bottom:16px">
+          <div class="stat-card" style="background:var(--purple-light);border-color:var(--purple-border)">
+            <div class="sc-val" style="color:var(--purple)">20%</div>
+            <div class="sc-label">Target Rate</div>
+            <div class="sc-note">Of Year 1 ACV. This is where you start. It reflects the real cost of engineering, onboarding, and integration work.</div>
+          </div>
+          <div class="stat-card" style="background:var(--red-light);border-color:var(--red-border)">
+            <div class="sc-val" style="color:var(--red)">10%</div>
+            <div class="sc-label">Floor</div>
+            <div class="sc-note">Absolute minimum. Below 10% requires CEO approval. You should never lead with this — it's a fallback, not a starting point.</div>
+          </div>
+          <div class="stat-card" style="background:var(--amber-light);border-color:var(--amber-border)">
+            <div class="sc-val" style="color:var(--amber)">Required</div>
+            <div class="sc-label">50+ Locations</div>
+            <div class="sc-note">Mandatory for 50+ loc deals. Under 50: 30-day money-back guarantee instead (no implementation fee required).</div>
+          </div>
+        </div>
+
+        <div class="tactic"><div class="t-title">How the 20% Is Calculated — Your Justification</div><p>The implementation fee covers real engineering hours: integration configuration, data migration, location setup, QA testing, and team training. For a typical enterprise deal, this represents 40-80+ hours of dedicated engineering and onboarding time. At blended rates of $150-200/hr for technical implementation resources, the 20% target is often at or below our actual cost. This isn't a profit center — it's cost recovery for making sure the platform works on day one.</p></div>
+
+        <div class="d-question" style="margin-top:16px"><p>Customer pushes back: "Why do I have to pay an implementation fee?"</p></div>
+        <div class="d-grid">
+          <div class="d-branch yes"><div class="b-label">✓ They Want to Understand It</div><p>Walk through the hours. Use the engineering cost justification above. Make it tangible: "This is X hours of integration engineering at blended rates."</p></div>
+          <div class="d-branch no"><div class="b-label">✗ They Want to Remove It</div><p>Do NOT offer to remove it. Explain what happens without proper implementation. If under 50 locations, you can offer the 30-day money-back guarantee path. If they push below 10%, escalate to Sai.</p></div>
+        </div>
+        <div class="script"><div class="script-label">Script — Implementation Fee Value</div><p>"The implementation fee covers 40-80 hours of dedicated engineering and onboarding work — integration configuration, data migration, location setup, testing, and training. We price it at 20% of Year 1 ACV, which is actually at or below our blended engineering cost for this work. The customers who skip or minimize this step are the ones who see slower time-to-value and lower adoption in their first 90 days. It's a one-time cost that protects the investment you're making in the platform."</p></div>
+        <div class="script"><div class="script-label">Script — When They Keep Pushing</div><p>"I hear you — it feels like an extra cost on top. But think of it this way: you're paying [ACV] per year for this platform to work. The implementation fee is what makes sure it actually does. We've seen operators try to skip this step and then spend months underutilizing the platform — that's the real cost. If the total contract value is the issue, let's look at contract length or modules — but the implementation fee stays in."</p></div>
+
+        <div class="tactic"><div class="t-title">Anchoring Strategy: PLPM vs. Implementation</div><p>Customers almost never negotiate both the per-location price and the implementation fee equally hard. Early in the negotiation, figure out which one they care about more. If they're fixated on PLPM, hold firm there and know you have a little room on implementation (above the 10% floor). If they're fixated on implementation, hold that firm and know you can adjust scope or term to move PLPM. The key is: never give ground on both.</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">🤝</span> Platform (CSM) Fee — Rules & Defense</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <p class="body-text">Platform fees cover customer operations support and CSM partnership. Standard tier is included in every deal. <strong style="color:var(--text)">Every customer is on a platform tier — it is not optional.</strong> The goal is to steer customers toward Pro.</p>
+
+        <table class="tier-table">
+          <thead>
+            <tr><th>Tier</th><th>Monthly</th><th>CSM Type</th><th>Hours</th><th>Cadence</th><th>SLA</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr class="standard">
+              <td><strong>Standard</strong></td>
+              <td>$0</td>
+              <td>Support only</td>
+              <td>—</td>
+              <td>Reactive</td>
+              <td>Best effort</td>
+              <td><span class="badge" style="background:var(--green-light);color:var(--green);border:1px solid var(--green-border)">INCLUDED</span></td>
+            </tr>
+            <tr>
+              <td><strong>Plus</strong></td>
+              <td>$700</td>
+              <td>Shared CSM</td>
+              <td>2 hrs/mo</td>
+              <td>Bi-weekly</td>
+              <td>&lt; 24 hrs</td>
+              <td><span class="badge" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-border)">UPSELL</span></td>
+            </tr>
+            <tr class="recommended">
+              <td><strong>Pro</strong></td>
+              <td>$2,000</td>
+              <td>Enterprise CSM</td>
+              <td>8 hrs/mo</td>
+              <td>Weekly</td>
+              <td>&lt; 12 hrs</td>
+              <td><span class="badge" style="background:var(--purple-light);color:var(--purple);border:1px solid var(--purple-border)">TARGET TIER</span></td>
+            </tr>
+            <tr>
+              <td><strong>Enterprise</strong></td>
+              <td>TBD</td>
+              <td>Enterprise CSM</td>
+              <td>Custom</td>
+              <td>Custom</td>
+              <td>Custom</td>
+              <td><span class="badge" style="background:var(--amber-light);color:var(--amber);border:1px solid var(--amber-border)">STRATEGIC</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="body-text" style="margin-top:8px;font-style:italic;color:var(--text-dim)">Internal note: Enterprise tier is priced by location. Do not share a fixed rate with customers — pricing is determined case-by-case with Sai.</p>
+
+        <div class="sub-heading" style="color:var(--red)">Pricing Psychology — Steering to Pro</div>
+        <div class="tactic"><div class="t-title">Make Lower Tiers Feel Insufficient</div><p>Standard is not a CSM — it's customer operations support (ticket-based, reactive). Plus is a shared CSM — they're splitting attention across multiple accounts. Pro is where you get an Enterprise CSM — a senior CSM who manages fewer accounts, knows your business deeply, is proactive, and is in your data weekly. The value gap between Plus and Pro should feel massive relative to the price gap.</p></div>
+        <div class="tactic"><div class="t-title">Social Proof Anchor</div><p>Use this framing early and often: "Most of our customers choose Plus or Pro — Standard is really only for teams that have an in-house data and operations team already." This makes Standard feel like the outlier, not the default, and pushes the conversation to Plus vs. Pro rather than Standard vs. everything else.</p></div>
+        <div class="tactic"><div class="t-title">Risk-Free Pro Trial</div><p>If the customer is between Plus and Pro: "Let me do this — we'll start you on Pro for the first month. You pay for it, but if after 30 days you feel Plus is enough, we'll refund the difference and downgrade you. That way you see what an Enterprise CSM — senior-level, fewer accounts, weekly in your data — actually looks like before you decide. Most people who try Pro don't go back."</p></div>
+
+        <div class="d-question" style="margin-top:16px"><p>Customer pushes back: "We don't need this much CSM support / why are we paying for support?"</p></div>
+        <div class="d-grid">
+          <div class="d-branch yes"><div class="b-label">✓ On Standard (Free)</div><p>Explain that Standard is customer operations support — not a dedicated CSM. They get ticket-based, reactive support. If they want proactive partnership, that starts at Plus. The question isn't whether they need support, it's whether they want reactive or proactive.</p></div>
+          <div class="d-branch no"><div class="b-label">✗ Pushing Back on Plus/Pro</div><p>Use the social proof anchor: "Most operators your size are on Plus or Pro." Reframe the cost as prevention: one issue caught early by a proactive CSM pays for the tier. If they genuinely want to downgrade, Standard is the floor.</p></div>
+        </div>
+        <div class="script"><div class="script-label">Script — Standard Tier Explanation</div><p>"Standard comes included with every deal — there's no additional charge. What it gives you is customer operations support: you can submit tickets, and our team will respond on a best-effort basis. What it doesn't include is a CSM. On Plus, you get a shared CSM who checks in bi-weekly. On Pro, you get an Enterprise CSM — a senior CSM who manages fewer accounts and is in your data weekly, flagging issues proactively. Most of our customers at your size choose Plus or Pro — Standard is really designed for teams that already have in-house ops and data capabilities."</p></div>
+        <div class="script"><div class="script-label">Script — Upgrading from Plus to Pro</div><p>"The difference between Plus and Pro is night and day. On Plus, your CSM is shared — they're supporting multiple accounts and checking in bi-weekly. On Pro, you get an Enterprise CSM — a senior CSM who manages fewer accounts. They know your locations, your pain points, and they're in your data weekly catching things before you see them. For operators running [X] locations, that pays for itself the first time it catches a negative review trend or identifies a location falling behind. Want to try Pro risk-free for the first month?"</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- DISCOUNT DEFENSE -->
+  <!-- ============================================================ -->
+  <div class="panel" id="panel-discount">
+    <div class="principle" style="background:var(--green-light);border-color:var(--green-border)">
+      <div class="p-title" style="color:var(--green)">Core Principle — Price Is a Signal of Value</div>
+      <p>Every time you discount without a trade, you signal that your original price was inflated. Best-in-class AEs don't negotiate price — they negotiate <em>scope, timeline, and terms</em>. Protect your price; adjust the deal structure.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">📊</span> Discount Authority Levels</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <div class="cards-3">
+          <div class="stat-card" style="background:var(--green-light);border-color:var(--green-border)">
+            <div class="sc-val" style="color:var(--green)">0–10%</div>
+            <div class="sc-label">AE Discretion</div>
+            <div class="sc-note">No approval needed. Use sparingly — to close, not to open. Once used, it's gone. Any discount triggers a 24-hour signature deadline.</div>
+          </div>
+          <div class="stat-card" style="background:var(--amber-light);border-color:var(--amber-border)">
+            <div class="sc-val" style="color:var(--amber)">10–20%</div>
+            <div class="sc-label">Manager Approval</div>
+            <div class="sc-note">Davi or Sai. Suggest a 2-year contract to make approval more likely. Use for competitive deals or champions fighting internally for budget.</div>
+          </div>
+          <div class="stat-card" style="background:var(--red-light);border-color:var(--red-border)">
+            <div class="sc-val" style="color:var(--red)">20%+</div>
+            <div class="sc-label">CEO Only</div>
+            <div class="sc-note">Sai only. Indicate that 3-year (or 4-year) contracts are the only way this might get approved. Reserved for strategic enterprise accounts.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">↔</span> The Discount Decision Tree</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <div class="d-question"><p>Customer asks: "Can you do better on price?" — First: Have you established full value?</p></div>
+        <div class="d-grid">
+          <div class="d-branch no-y"><div class="b-label">Yes — Value Established</div><p>Use the Value Anchor response before giving anything. Never lead with the discount.</p></div>
+          <div class="d-branch no"><div class="b-label">No — Not Yet</div><p>Stop. Do not quote a discount. Return to the value conversation first. You cannot defend price you haven't built.</p></div>
+        </div>
+        <div class="tactic"><div class="t-title">Value Anchor Before Any Discount</div><p>Never respond to a discount request immediately. Pause, then re-anchor to outcomes: competitive differentiation, the cost of the problem they're solving, and what comparable operators are already achieving on the platform.</p></div>
+        <div class="script"><div class="script-label">Script — Initial Discount Deflection</div><p>"Before I look at numbers, help me understand — is price the only thing standing between us and moving forward? Because if there are other concerns, I don't want to give up margin without solving the real issue."</p></div>
+
+        <div class="d-question" style="margin-top:16px"><p>After value conversation — still asking for a discount or using a competitor as leverage?</p></div>
+        <div class="d-grid">
+          <div class="d-branch no-y"><div class="b-label">Competitor Leverage</div><p>Validate, then reframe with differentiation. Use the competitor response script below.</p></div>
+          <div class="d-branch yes"><div class="b-label">Just Testing</div><p>Hold price. Offer a non-cash value add: extra onboarding, CSM tier upgrade for month 1, or priority onboarding cohort.</p></div>
+        </div>
+        <div class="script"><div class="script-label">Script — Competitor Leverage</div><p>"I appreciate you being transparent about that. The honest answer is we're probably not the cheapest option — and that's intentional. [Competitor] is solid for [X], but what we're seeing with operators your size is the gap shows up in [specific differentiator]. Can I show you a quick comparison?"</p></div>
+
+        <div class="d-question" style="margin-top:16px"><p>Deal is genuinely at risk on price — is there a structural lever before a flat % discount?</p></div>
+        <div class="d-grid">
+          <div class="d-branch yes"><div class="b-label">Yes — Use Structural Trade</div><p>Trade discount for value: multi-year contract, customer reference, case study, faster close. "I can get you 10% off if we go 2-year, you sign in 24 hours, and you agree to be a reference."</p></div>
+          <div class="d-branch no"><div class="b-label">No Structure Available</div><p>Escalate to manager for 10–20% approval. Suggest 2-year to strengthen the case. 24-hour deadline to Sai for anything 20%+, with 3-year minimum.</p></div>
+        </div>
+
+        <div class="sub-heading" style="color:var(--red)">The Price / Speed / Certainty Triangle</div>
+        <div class="tactic"><div class="t-title">If They Want Price, We Need Speed and Certainty</div><p>Every discount triggers a trade. The customer picks one lever (price), and we get the other two (speed + certainty). Any discount — at any tier — results in a <strong>24-hour deadline to signature.</strong> This is non-negotiable. Frame it clearly: "I can work on the price, but I need a commitment that if I get this approved, we're signing within 24 hours. Price, speed, certainty — I can give you price, but I need the other two."</p></div>
+
+        <div class="sub-heading" style="color:var(--red)">What We Get in Return (Give to Get)</div>
+        <p class="body-text">Every concession you make should feel earned. These are the trades that make a discount feel like a partnership, not an extraction. Present these as part of the deal, not as afterthoughts.</p>
+        <div class="trade-grid">
+          <div class="trade-item"><div class="ti-label">24-hour signature deadline</div><div class="ti-earn">Required on every discount. "I can get you this price, but it's a 24-hour window. If we miss it, we revert to standard."</div></div>
+          <div class="trade-item"><div class="ti-label">Customer reference</div><div class="ti-earn">Agree to be a reference for future prospects in their segment. Zero cost to them, high value to us.</div></div>
+          <div class="trade-item"><div class="ti-label">Customer case study</div><div class="ti-earn">Participate in a written or video case study within 6 months. Great for marketing — makes the discount feel like a partnership.</div></div>
+          <div class="trade-item"><div class="ti-label">Multi-year commitment</div><div class="ti-earn">10–20% discount → suggest 2-year to make manager approval more likely. 20%+ → 3-year or 4-year is the only path to CEO approval.</div></div>
+          <div class="trade-item"><div class="ti-label">Plan upgrade (Core → Growth)</div><div class="ti-earn">5% bundle savings on Growth, 15% on Platform. More product stickiness for CSM + higher retention.</div></div>
+          <div class="trade-item"><div class="ti-label">Additional locations</div><div class="ti-earn">Expand location count in exchange for better per-location rate. Increases total ACV even at a discount.</div></div>
+        </div>
+        <div class="script"><div class="script-label">Script — The Give to Get</div><p>"I can work on the pricing for you — but here's what I'd need in return. First, if I get this approved, we're signing within 24 hours. Second, I'd love for you to be a reference customer for us — we'll ask you to hop on a call with a prospect or two in your segment, and ideally participate in a case study down the road. That way this feels like a partnership, not just a discount. Fair?"</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">🚫</span> What To NEVER Do</div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="never-list">
+          <div class="n-item"><span class="n-icon">✗</span><span class="n-text">Never offer a discount before they ask for one. You're training them to always expect more.</span></div>
+          <div class="n-item"><span class="n-icon">✗</span><span class="n-text">Never say "I can give you X% off" as an opener. You've negotiated against yourself.</span></div>
+          <div class="n-item"><span class="n-icon">✗</span><span class="n-text">Never give a discount without getting something in return. A trade makes the discount feel earned, not extracted.</span></div>
+          <div class="n-item"><span class="n-icon">✗</span><span class="n-text">Never promise a discount that requires approval before you have it. It destroys your credibility if it falls through.</span></div>
+          <div class="n-item"><span class="n-icon">✗</span><span class="n-text">Never let a discount conversation die in email. Call them — urgency dies in async.</span></div>
+          <div class="n-item"><span class="n-icon">✗</span><span class="n-text">Never negotiate both PLPM and implementation fee. Figure out which one the customer cares about and anchor there.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- CONTRACT LENGTH -->
+  <!-- ============================================================ -->
+  <div class="panel" id="panel-contract">
+    <div class="principle" style="background:var(--blue-light);border-color:var(--blue-border)">
+      <div class="p-title" style="color:var(--blue)">Core Principle — Annual Is Standard, Multi-Year Is the Reward</div>
+      <p>Annual contracts are our standard and we're happy with them. Don't use pricing to coerce customers into multi-year. Instead, multi-year is a tool you deploy <em>when the customer pushes hard on price</em> — it's how they unlock bigger discounts and price protection. Separately, use the price-lock benefit to proactively persuade customers who are a good fit.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">📐</span> Contract Length Value Matrix</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <div class="cards-3">
+          <div class="stat-card" style="background:var(--green-light);border-color:var(--green-border)">
+            <div class="sc-val" style="color:var(--green)">Standard</div>
+            <div class="sc-label">1 Year</div>
+            <div class="sc-note">Our default. Subject to 7% annual increase at renewal. This is a perfectly good outcome — don't treat it as a fallback.</div>
+          </div>
+          <div class="stat-card" style="background:var(--amber-light);border-color:var(--amber-border)">
+            <div class="sc-val" style="color:var(--amber)">2 Year</div>
+            <div class="sc-label">Discount Unlock</div>
+            <div class="sc-note">Suggest when customer wants 10–20% discount. Makes manager approval more likely. Locks pricing for 24 months.</div>
+          </div>
+          <div class="stat-card" style="background:var(--purple-light);border-color:var(--purple-border)">
+            <div class="sc-val" style="color:var(--purple)">3–4 Year</div>
+            <div class="sc-label">CEO Approval Path</div>
+            <div class="sc-note">Required for 20%+ discounts. The only way to get CEO-level pricing approved. Full price lock for the term.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">🛡️</span> Defense: Multi-Year as a Discount Response</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <p class="body-text">Don't lead with multi-year — use it as your response when the customer pushes hard on price. The discount tiers and contract length work together:</p>
+        <div class="cards-3">
+          <div class="stat-card" style="background:var(--green-light);border-color:var(--green-border)">
+            <div class="sc-label" style="color:var(--green)">0–10% Discount</div>
+            <div class="sc-note">AE discretion. No contract length requirement. Annual is fine.</div>
+          </div>
+          <div class="stat-card" style="background:var(--amber-light);border-color:var(--amber-border)">
+            <div class="sc-label" style="color:var(--amber)">10–20% Discount</div>
+            <div class="sc-note">Suggest 2-year contract. "I can take this to my manager, and a 2-year commitment makes it much more likely to get approved."</div>
+          </div>
+          <div class="stat-card" style="background:var(--red-light);border-color:var(--red-border)">
+            <div class="sc-label" style="color:var(--red)">20%+ Discount</div>
+            <div class="sc-note">3-year or 4-year contract is the only path. "The only way I can take this to the CEO is with a 3-year commitment. That's the trade."</div>
+          </div>
+        </div>
+        <div class="script"><div class="script-label">Script — Linking Discount to Contract Length</div><p>"I hear you on the pricing — and I want to find a way to make this work. Here's the reality: a discount at this level needs manager approval, and the strongest case I can make is with a 2-year commitment. That way you're getting a meaningful discount AND locking in your rate — no 7% increases for 24 months. If I go to my manager with a 1-year deal at this price, it's going to be a much harder conversation. Which direction makes more sense?"</p></div>
+        <div class="script"><div class="script-label">Script — CEO-Level Discount</div><p>"I want to be transparent — a discount at this level requires our CEO's direct approval. The only scenario where he's likely to say yes is a 3-year (or longer) commitment. At that level, you're locking in pricing with no annual increases for the full term, which is significant given our standard 7% annual adjustment. I need to bring this to him within 24 hours — if he approves, are you ready to commit to a 3-year?"</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">⚡</span> Offense: Price-Lock as a Proactive Sell</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <p class="body-text">Separately from discount conversations, use the 7% annual increase as a proactive reason to go multi-year. This is the offense play — you're not responding to a discount request, you're creating value.</p>
+        <div class="tactic"><div class="t-title">The Price-Lock Pitch</div><p>Frame multi-year as a smart financial decision independent of discounts: "Even without a discount, locking in your current rate for 2–3 years protects you from our standard 7% annual adjustment. Over 3 years, that compounding adds up to real money. It's the single best thing you can do to control your costs on this platform."</p></div>
+        <div class="script"><div class="script-label">Script — Proactive Price-Lock</div><p>"One thing I want to flag before we finalize — our standard renewal includes a 7% annual adjustment. If you're happy with the pricing we've agreed on, the best way to protect it is a multi-year contract. A 2-year locks your rate for 24 months, a 3-year for 36. No increases, no surprises. Most of our enterprise customers who signed multi-year early are glad they did. Want me to model what that looks like?"</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">↔</span> Handling Objections to Multi-Year</div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="d-question"><p>What is the customer's stated objection to multi-year?</p></div>
+        <div class="d-grid">
+          <div class="d-branch no-y"><div class="b-label">"We don't know if this will work"</div><p>Risk objection. Use customer proof and offer the 1-year path confidently.</p></div>
+          <div class="d-branch no-p"><div class="b-label">"We don't do multi-year deals"</div><p>Policy objection. Engage the price-lock argument and draft both scenarios for their internal team.</p></div>
+        </div>
+
+        <div class="sub-heading" style="color:var(--amber)">Risk Objection Playbook</div>
+        <div class="tactic"><div class="t-title">Lead with Customer Proof</div><p>Our enterprise customers don't leave us. Say it confidently: "I understand the concern, but I should tell you — our enterprise retention is exceptional. Once customers are on the platform, they stay. We're happy to do a 1-year contract if that's more comfortable. But if you want to avoid price increases, multi-year is the way to lock that in. We can't agree to a 0% increase in the contract — it has to be a number greater than 0."</p></div>
+        <div class="script"><div class="script-label">Script — Risk Objection</div><p>"Completely understand — and look, we're totally fine with a 1-year contract. Our enterprise customers never leave us, so I'm confident you'll renew. The only thing I'd flag is that a 1-year deal comes with a 7% adjustment at renewal. If that matters to you, the multi-year path is the only way to lock your rate. But if you'd rather start with 1 year and revisit at renewal, we can absolutely do that."</p></div>
+
+        <div class="sub-heading" style="color:var(--purple)">Policy Objection Playbook</div>
+        <div class="script"><div class="script-label">Script — Policy Override</div><p>"I respect that — it's a question I get from a lot of [industry] operators. What most of them find is that restaurant-tech is a category where locking in current pricing matters more than almost anywhere else, because it's improving fast and prices are moving. With our standard 7% annual increase, a 3-year deal at today's rate vs. three 1-year renewals saves you a meaningful amount. I can draft both scenarios if it helps you make the internal case."</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- PLAN UPSELL -->
+  <!-- ============================================================ -->
+  <div class="panel" id="panel-plan">
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">📦</span> Plan Bundle Overview</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <div class="cards-3">
+          <div class="stat-card" style="background:var(--bg);border-color:var(--border)">
+            <div class="sc-val" style="color:var(--text-dim)">0%</div>
+            <div class="sc-label">Core — 1 Product</div>
+            <div class="sc-note">Single module only. Entry point — not the destination. Flag for CSM expansion at 90 days.</div>
+          </div>
+          <div class="stat-card" style="background:var(--blue-light);border-color:var(--blue-border)">
+            <div class="sc-val" style="color:var(--blue)">5% off</div>
+            <div class="sc-label">Growth — 2 Products</div>
+            <div class="sc-note">Default recommendation. The majority of our customers are on 2 or 3 products. CS + CX is the natural pairing. Always lead with this.</div>
+          </div>
+          <div class="stat-card" style="background:var(--purple-light);border-color:var(--purple-border)">
+            <div class="sc-val" style="color:var(--purple)">15% off</div>
+            <div class="sc-label">Platform — CS + CX + LM</div>
+            <div class="sc-note">Full platform. Best economics. Push hard for multi-location operators. Strongest deal + highest retention.</div>
+          </div>
+        </div>
+
+        <div class="d-question" style="margin-top:16px"><p>Customer wants to start with just 1 module — is there a natural pairing?</p></div>
+        <div class="d-grid">
+          <div class="d-branch yes"><div class="b-label">Yes — Natural Pairing</div><p>Show the Growth bundle math. The majority of our customers are on 2 or 3 products — make them feel like Core is the outlier.</p></div>
+          <div class="d-branch no"><div class="b-label">Not Yet</div><p>Start on Core. Flag for CSM to expand at 90-day mark. Set the expectation: "Most operators add a second product within the first quarter."</p></div>
+        </div>
+        <div class="script"><div class="script-label">Script — Growth Bundle Upsell</div><p>"So if you go with just CS, you're at [X]. If we add CX, normally that's [Y] more — but on Growth, we bundle them at 5% off the combined rate. You're only paying [Z delta] more than standalone CS for a product that does significantly more. I should mention — the majority of our customers are on two or three products. Starting on Core is fine, but most people end up adding a second module within the first quarter anyway, and it's cheaper to bundle now than add later."</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">⚠</span> Renewal Same-Plan Rule</div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="must-have" style="background:var(--amber-light);border-color:var(--amber-border)">
+          <div class="mh-title" style="color:var(--amber)">Critical: Renewal Bundle Discount Resets + 7% Increase Applies</div>
+          <div class="mh-row" style="border-color:var(--amber-border)"><span class="mh-icon" style="color:var(--amber)">!</span><p>If a customer renews on the <strong style="color:var(--amber)">same plan</strong> (Growth → Growth or Platform → Platform), the bundle discount resets to $0 AND the 7% annual increase applies. Present this proactively so customers aren't surprised. The path to avoiding the increase: multi-year renewal.</p></div>
+        </div>
+        <div class="script"><div class="script-label">Script — Renewal Same-Plan Framing</div><p>"Your renewal pricing looks different for two reasons: the initial bundle discount was a first-year incentive, and we apply a standard 7% annual adjustment. If you want to add [LM / new module], we can unlock a new bundle discount at Platform level. And if you want to lock in your rate going forward, a 2-year renewal eliminates the annual increase entirely. Want me to model that?"</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- APPROVAL FLOW -->
+  <!-- ============================================================ -->
+  <div class="panel" id="panel-approval">
+    <div class="principle" style="background:var(--green-light);border-color:var(--green-border)">
+      <div class="p-title" style="color:var(--green)">All approval requests route to #pricing_approval_flow in Slack</div>
+      <p>Multiple triggers stack — the highest level wins. The tool <em>blocks PDF generation</em> until the deal is approved. Never promise an approval you don't have. All escalations to Sai have a <em>24-hour deadline</em>.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">📋</span> Complete Approval Trigger Map</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <div class="esc-row">
+          <div class="esc-badge" style="background:var(--green-light);color:var(--green);border:1px solid var(--green-border)">AE ONLY</div>
+          <div class="esc-info"><div class="esc-trigger">AE Discount 0–10%</div><div class="esc-who">No approval needed · Your call — 24-hour signature deadline required on any discount</div></div>
+        </div>
+        <div class="esc-row">
+          <div class="esc-badge" style="background:var(--amber-light);color:var(--amber);border:1px solid var(--amber-border)">MANAGER</div>
+          <div class="esc-info"><div class="esc-trigger">AE Discount 10–20%</div><div class="esc-who">Davi or Sai · Suggest 2-year contract · Slack #pricing_approval_flow with full deal context</div></div>
+        </div>
+        <div class="esc-row">
+          <div class="esc-badge" style="background:var(--red-light);color:var(--red);border:1px solid var(--red-border)">CEO</div>
+          <div class="esc-info"><div class="esc-trigger">AE Discount 20%+</div><div class="esc-who">Sai only · 3-year+ contract required · 24-hour deadline · Direct conversation with full deal summary</div></div>
+        </div>
+        <div class="esc-row">
+          <div class="esc-badge" style="background:var(--red-light);color:var(--red);border:1px solid var(--red-border)">CEO</div>
+          <div class="esc-info"><div class="esc-trigger">Implementation fee below 10% of Y1 ACV</div><div class="esc-who">Sai only · 24-hour deadline · Flag in tool — do not calculate alternative yourself</div></div>
+        </div>
+        <div class="esc-row">
+          <div class="esc-badge" style="background:var(--red-light);color:var(--red);border:1px solid var(--red-border)">CEO</div>
+          <div class="esc-info"><div class="esc-trigger">Any non-annual billing structure</div><div class="esc-who">Sai only · 24-hour deadline · Do NOT share premium % with customer</div></div>
+        </div>
+        <div class="esc-row">
+          <div class="esc-badge" style="background:var(--red-light);color:var(--red);border:1px solid var(--red-border)">CEO</div>
+          <div class="esc-info"><div class="esc-trigger">Enterprise unpaid pilot (Option 3)</div><div class="esc-who">Sai only · 24-hour deadline · Customer must still pay implementation</div></div>
+        </div>
+        <div class="esc-row">
+          <div class="esc-badge" style="background:var(--red-light);color:var(--red);border:1px solid var(--red-border)">CEO</div>
+          <div class="esc-info"><div class="esc-trigger">Per-year discount variation (Y1 ≠ Y2 ≠ Y3)</div><div class="esc-who">Sai only · 24-hour deadline · Explain the business rationale</div></div>
+        </div>
+        <div class="esc-row">
+          <div class="esc-badge" style="background:var(--red-light);color:var(--red);border:1px solid var(--red-border)">CEO</div>
+          <div class="esc-info"><div class="esc-trigger">Annual increase below 3%</div><div class="esc-who">Sai only · 24-hour deadline · 0% is never allowed on 1-year deals</div></div>
+        </div>
+
+        <div class="sub-heading" style="color:var(--red);margin-top:18px">How to Brief Your Approver (Always Include This)</div>
+        <div class="code-block">
+          <span>Customer:</span> [Name + size + segment]<br>
+          <span>Deal size:</span> [ACV] · [Locations] locs · [Contract term]<br>
+          <span>Trigger:</span> [what is requiring approval]<br>
+          <span>Why:</span> [business reason — competitive, budget, strategic]<br>
+          <span>What I've tried:</span> [value reframe, structural alternative, etc.]<br>
+          <span>Risk of losing deal:</span> [High / Medium / Low]<br>
+          <span>Timeline:</span> [when decision needed — max 24 hours]
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">🔄</span> Pricing Waterfall Reference</div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="section-body">
+        <p class="body-text">Every deal flows through this exact sequence. Each step builds on the previous one.</p>
+        <div class="waterfall">
+          <div class="wf-step">Subtotal (modules + add-ons)</div>
+          <div class="wf-arrow">→</div>
+          <div class="wf-step">Bundle Discount</div>
+          <div class="wf-arrow">→</div>
+          <div class="wf-step">Contract Discount</div>
+          <div class="wf-arrow">→</div>
+          <div class="wf-step">Billing Adjustment (renewal)</div>
+          <div class="wf-arrow">→</div>
+          <div class="wf-step">AE Discount</div>
+          <div class="wf-arrow">→</div>
+          <div class="wf-step" style="background:var(--red-light);border-color:var(--red-border);color:var(--red)">Final $/loc/mo</div>
+        </div>
+        <p class="body-text" style="margin-top:8px">+ Implementation fee (one-time, target 20% / floor 10% of Y1 ACV) + Platform fee (monthly flat, all deals) + 7% annual increase at renewal (unless multi-year)</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- CLOSING PLAYS -->
+  <!-- ============================================================ -->
+  <div class="panel" id="panel-tactics">
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">🧠</span> The Best-in-Class AE Mindset</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <div class="cards-2">
+          <div class="tactic"><div class="t-title">Assume the Close</div><p>Write proposals as if they're signing. Present timelines, kickoff dates, onboarding steps. Confidence is contagious.</p></div>
+          <div class="tactic"><div class="t-title">Urgency Must Be Real</div><p>Never manufacture fake urgency. Real urgency: onboarding cohorts, CSM availability, pricing windows, quarter-end bandwidth.</p></div>
+          <div class="tactic"><div class="t-title">Silence Is a Weapon</div><p>After presenting the offer, stop talking. The first person who speaks gives ground. Get comfortable with 3–5 seconds of silence.</p></div>
+          <div class="tactic"><div class="t-title">Give to Get</div><p>Every concession should cost them something. Even a small trade — reference, case study, faster signature — changes the dynamic.</p></div>
+          <div class="tactic"><div class="t-title">Go High Early</div><p>Always start at full price with standard fees and 20% implementation. Starting at a discount signals you don't believe in your own pricing. Remember: you have 0–10% discretion — save it for the close, not the open.</p></div>
+          <div class="tactic"><div class="t-title">Bounded Choices</div><p>"Do you want to go with the 1-year or 2-year?" Not "What do you think?" Bounded choices accelerate decisions.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">💬</span> Closing Scripts</div>
+        <div class="chevron open">▾</div>
+      </div>
+      <div class="section-body open">
+        <div class="script"><div class="script-label">The "What Would It Take" Close</div><p>"I feel like we're close — I want to understand if there's something specific that would make this a clear yes for you. What would it take to get this done this week?"</p></div>
+        <div class="script"><div class="script-label">The "Summary of Value" Close</div><p>"Let me recap what you're getting: [module recap], [contract discount for multi-year], CSM support at [tier], implementation covered in the onboarding fee, and kickoff on [date]. For [ACV] annually, you're getting [core outcome]. That math works, right?"</p></div>
+        <div class="script"><div class="script-label">The "Competitive" Close</div><p>"I know you're also talking to [competitor]. I think the decision comes down to [key differentiator]. What would help you make that comparison cleanly?"</p></div>
+        <div class="script"><div class="script-label">The "Hard Date" Close</div><p>"I want to be straight with you — if we can get the contract signed by [date], I can hold this pricing and get you into the [month] onboarding cohort. After that, I can't guarantee either. Does that timeline work on your end?"</p></div>
+        <div class="script"><div class="script-label">The "Champion" Close</div><p>"It sounds like this is held up on [procurement/legal]. What does your internal champion need from me to move it forward? I can write the internal approval email for you if that helps — I've done it before."</p></div>
+        <div class="script"><div class="script-label">The "Sai Alignment" Close</div><p>"Look, you and I are aligned on this — I want to make this work. What I need to do is bring this to our CEO within 24 hours for approval. He reviews these personally. If he signs off, are we moving forward? Give me that commitment and I'll go to bat for you."</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)">
+        <div class="section-title"><span class="section-icon">🔄</span> CSM-Specific: Renewals & Expansion</div>
+        <div class="chevron">▾</div>
+      </div>
+      <div class="section-body">
+        <div class="tactic"><div class="t-title">Start Renewals 90 Days Early</div><p>Never be in a renewal conversation with less than 60 days runway. Urgency dies, alternatives get explored, and budget cycles get complicated. 90 days = leverage. And remember: the 7% increase is coming — use it to drive multi-year conversations early.</p></div>
+        <div class="script"><div class="script-label">Script — Proactive Renewal Opener (90 Days Out)</div><p>"I wanted to get ahead of your renewal — we have about 90 days, which is the right time to talk about what's working and what the next 12–24 months could look like. I should mention upfront that our standard renewal includes a 7% adjustment, but if we do a multi-year renewal, we can lock in your current rate. Can we block 30 minutes to walk through the options?"</p></div>
+        <div class="tactic"><div class="t-title">Expand Before You Renew</div><p>A customer who just added modules has much higher commitment to renewal. A customer debating renewal is a much harder sell for expansion. Always expand first.</p></div>
+        <div class="script"><div class="script-label">Script — Expansion Pitch (CSM)</div><p>"Based on what I've seen in your account, [LM / next module] would directly address [specific pain point we've discussed]. I can put together a quick add-on quote — it's actually cheaper per location to add it now than to price it separately at renewal. Want me to run the numbers?"</p></div>
+        <div class="tactic"><div class="t-title">Platform Fee Upgrade at Renewal</div><p>Renewal is the natural moment to upgrade CSM tiers. If the customer has been on Standard and you've been doing more informal work, formalize it. "You've been getting shared CSM-level attention on a Standard plan — let's make it official with Plus or Pro so you're fully supported. Most operators your size are on Pro with an Enterprise CSM."</p></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function switchTab(id) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('panel-' + id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function toggleSection(header) {
+    const body = header.nextElementSibling;
+    const chevron = header.querySelector('.chevron');
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    chevron.classList.toggle('open', !isOpen);
+    header.classList.toggle('open', !isOpen);
+  }
+</script>
+</body>
+</html>
